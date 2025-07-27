@@ -10,60 +10,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageInput = document.getElementById('messageInput');
     const messagesContainer = document.getElementById('messages');
     const welcomeScreen = document.getElementById('welcomeScreen');
-    const newChatBtn = document.getElementById('newChatBtn');
-    const toggleSidebarBtn = document.getElementById('toggleSidebar');
-    const sidebar = document.getElementById('sidebar');
     
     console.log('DOM elements:', {
         messageForm: !!messageForm,
         messageInput: !!messageInput,
         messagesContainer: !!messagesContainer,
-        welcomeScreen: !!welcomeScreen,
-        newChatBtn: !!newChatBtn,
-        toggleSidebarBtn: !!toggleSidebarBtn,
-        sidebar: !!sidebar
+        welcomeScreen: !!welcomeScreen
     });
-
-    // サイドバーのトグル
-    function toggleSidebar() {
-        sidebar.classList.toggle('open');
-        document.body.classList.toggle('overflow-hidden');
-        
-        // バックドロップの作成/削除
-        let backdrop = document.querySelector('.backdrop');
-        if (!backdrop) {
-            backdrop = document.createElement('div');
-            backdrop.className = 'backdrop';
-            backdrop.onclick = closeSidebar;
-            document.body.appendChild(backdrop);
-        }
-        backdrop.classList.toggle('open');
-    }
-
-    function closeSidebar() {
-        sidebar.classList.remove('open');
-        document.body.classList.remove('overflow-hidden');
-        const backdrop = document.querySelector('.backdrop');
-        if (backdrop) {
-            backdrop.classList.remove('open');
-        }
-    }
 
     // イベントリスナーの設定
     function setupEventListeners() {
         console.log('Setting up event listeners...');
-        
-        // サイドバートグル
-        if (toggleSidebarBtn) {
-            console.log('Adding click listener to toggleSidebarBtn');
-            toggleSidebarBtn.addEventListener('click', toggleSidebar);
-        }
-        
-        // 新しいチャットボタン
-        if (newChatBtn) {
-            console.log('Adding click listener to newChatBtn');
-            newChatBtn.addEventListener('click', startNewChat);
-        }
         
         // メッセージ送信フォーム
         if (messageForm) {
