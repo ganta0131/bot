@@ -15,8 +15,7 @@
     "@google/generative-ai": "^0.8.0"
   },
   "devDependencies": {
-    "@vercel/node": "^3.0.0",
-    "@vercel/static": "^2.0.0"
+    "@vercel/node": "^3.0.0"
   },
   "engines": {
     "node": ">=16.0.0"
