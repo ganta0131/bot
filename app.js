@@ -1,4 +1,10 @@
+// グローバル変数
+let isLoading = false;
+
+// DOMの読み込みを待つ
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM fully loaded');
+    
     // DOM要素の取得
     const messageForm = document.getElementById('messageForm');
     const messageInput = document.getElementById('messageInput');
@@ -7,7 +13,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const newChatBtn = document.getElementById('newChatBtn');
     const toggleSidebarBtn = document.getElementById('toggleSidebar');
     const sidebar = document.getElementById('sidebar');
-    let isLoading = false;
+    
+    console.log('DOM elements:', {
+        messageForm: !!messageForm,
+        messageInput: !!messageInput,
+        messagesContainer: !!messagesContainer,
+        welcomeScreen: !!welcomeScreen,
+        newChatBtn: !!newChatBtn,
+        toggleSidebarBtn: !!toggleSidebarBtn,
+        sidebar: !!sidebar
+    });
 
     // サイドバーのトグル
     function toggleSidebar() {
@@ -35,78 +50,121 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // イベントリスナーの設定
-    if (toggleSidebarBtn) toggleSidebarBtn.addEventListener('click', toggleSidebar);
-    if (newChatBtn) newChatBtn.addEventListener('click', startNewChat);
-
-    // メッセージ送信処理
-    if (messageForm) {
-        messageForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const message = messageInput.value.trim();
-            if (!message || isLoading) return;
-
-            // ユーザーメッセージを表示
-            addMessage('user', message);
-            messageInput.value = '';
-            adjustTextareaHeight();
-            
-            // ローディング表示
-            showLoading();
-            
-            try {
-                // APIにリクエストを送信
-                const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/chat' : '/api/chat';
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ message }),
-                    credentials: 'same-origin'
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json().catch(() => ({}));
-                    throw new Error(errorData.error || 'Network response was not ok');
-                }
-
-                const data = await response.json();
-                
-                // ローディングを非表示に
-                hideLoading();
-                
-                // アシスタントの返答を表示
-                addMessage('assistant', data.response);
-            } catch (error) {
-                console.error('Error:', error);
-                hideLoading();
-                addMessage('assistant', '申し訳ありません、エラーが発生しました。もう一度お試しください。');
-            }
-        });
-    }
-
-    // テキストエリアの高さを自動調整
-    if (messageInput) {
-        messageInput.addEventListener('input', adjustTextareaHeight);
+    function setupEventListeners() {
+        console.log('Setting up event listeners...');
         
-        // Shift + Enterで改行、Enterで送信
-        messageInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                messageForm.dispatchEvent(new Event('submit'));
-            }
+        // サイドバートグル
+        if (toggleSidebarBtn) {
+            console.log('Adding click listener to toggleSidebarBtn');
+            toggleSidebarBtn.addEventListener('click', toggleSidebar);
+        }
+        
+        // 新しいチャットボタン
+        if (newChatBtn) {
+            console.log('Adding click listener to newChatBtn');
+            newChatBtn.addEventListener('click', startNewChat);
+        }
+        
+        // メッセージ送信フォーム
+        if (messageForm) {
+            console.log('Adding submit listener to messageForm');
+            messageForm.addEventListener('submit', handleSubmit);
+        }
+        
+        // テキストエリアの高さ調整
+        if (messageInput) {
+            console.log('Adding input listener to messageInput');
+            messageInput.addEventListener('input', adjustTextareaHeight);
+            
+            // Enterキーでの送信
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    console.log('Enter key pressed, submitting form');
+                    messageForm.dispatchEvent(new Event('submit'));
+                }
+            });
+        }
+        
+        // サジェッションボタン
+        document.querySelectorAll('.suggestion-btn').forEach((button, index) => {
+            console.log(`Adding click listener to suggestion button ${index + 1}`);
+            button.addEventListener('click', (e) => {
+                const suggestion = e.target.textContent.trim();
+                console.log('Suggestion button clicked:', suggestion);
+                messageInput.value = suggestion;
+                messageInput.focus();
+                adjustTextareaHeight();
+                
+                // 自動送信
+                setTimeout(() => {
+                    messageForm.dispatchEvent(new Event('submit'));
+                }, 100);
+            });
         });
     }
+    
+    // フォーム送信ハンドラ
+    async function handleSubmit(e) {
+        e.preventDefault();
+        console.log('Form submitted');
+        
+        const message = messageInput.value.trim();
+        if (!message || isLoading) {
+            console.log('Message is empty or already loading');
+            return;
+        }
+        
+        console.log('Sending message:', message);
+        
+        // ユーザーメッセージを表示
+        addMessage('user', message);
+        messageInput.value = '';
+        adjustTextareaHeight();
+        
+        // ローディング表示
+        showLoading();
+        
+        try {
+            // APIにリクエストを送信
+            const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/chat' : '/api/chat';
+            console.log('Calling API:', apiUrl);
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ message }),
+                credentials: 'same-origin'
+            });
 
-    // サジェッションボタンのイベントリスナー
-    document.querySelectorAll('.suggestion-btn').forEach(button => {
-        button.addEventListener('click', (e) => {
-            const suggestion = e.target.textContent.trim();
-            messageInput.value = suggestion;
-            messageInput.focus();
-            adjustTextareaHeight();
-        });
-    });
+            console.log('API response status:', response.status);
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('API error:', errorData);
+                throw new Error(errorData.error || 'Network response was not ok');
+            }
+
+            const data = await response.json();
+            console.log('API response data:', data);
+            
+            // ローディングを非表示に
+            hideLoading();
+            
+            // アシスタントの返答を表示
+            addMessage('assistant', data.response);
+        } catch (error) {
+            console.error('Error:', error);
+            hideLoading();
+            addMessage('assistant', '申し訳ありません、エラーが発生しました。もう一度お試しください。');
+        }
+    }
+
+    // イベントリスナーのセットアップを実行
+    setupEventListeners();
+    console.log('Event listeners setup completed');
 
     // メッセージを追加する関数
     function addMessage(role, content) {
