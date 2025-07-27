@@ -46,27 +46,45 @@ document.addEventListener('DOMContentLoaded', () => {
         
         try {
             const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/chat' : '/api/chat';
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ message })
-            });
-            
-            const data = await response.json();
-            
-            if (data.response) {
-                addMessage('assistant', data.response);
-            } else {
-                throw new Error('No response from server');
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ message })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    const errorMessage = data.error || data.message || 'API request failed';
+                    console.error('API Error:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        error: errorMessage,
+                        details: data.details
+                    });
+                    throw new Error(`サーバーエラーが発生しました: ${errorMessage}`);
+                }
+                
+                if (data.success && data.response) {
+                    addMessage('assistant', data.response);
+                } else {
+                    console.error('Invalid response format:', data);
+                    throw new Error('無効なレスポンス形式です');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                const errorMessage = error.message || '申し訳ありません、エラーが発生しました。もう一度お試しください。';
+                addMessage('assistant', errorMessage);
+            } finally {
+                hideLoading();
+                isLoading = false;
             }
         } catch (error) {
             console.error('Error:', error);
             addMessage('assistant', '申し訳ありません、エラーが発生しました。もう一度お試しください。');
-        } finally {
-            hideLoading();
-            isLoading = false;
         }
     }
 

@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // CORSヘッダーを設定
   const allowedOrigins = [
     'http://localhost:3000',
@@ -31,7 +31,19 @@ export default async function handler(req, res) {
     const apiKey = process.env.GOOGLE_API_KEY;
     
     if (!apiKey) {
-      throw new Error('API key is not configured');
+      console.error('Error: GOOGLE_API_KEY is not configured');
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Server configuration error',
+        details: 'API key is not configured'
+      });
+    }
+    
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        error: 'Message is required'
+      });
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
@@ -92,11 +104,18 @@ export default async function handler(req, res) {
     });
     
   } catch (error) {
-    console.error('Error:', error);
+    console.error('API Error:', error);
     
     // エラーレスポンス
     const statusCode = error.response?.status || 500;
     const errorMessage = error.message || '申し訳ありません、エラーが発生しました。';
+    
+    // エラーの詳細をログに出力
+    console.error('Error details:', {
+      statusCode,
+      message: errorMessage,
+      stack: error.stack
+    });
     
     return res.status(statusCode).json({
       success: false,
