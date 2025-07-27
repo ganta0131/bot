@@ -130,31 +130,40 @@ document.addEventListener('DOMContentLoaded', () => {
             const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/chat' : '/api/chat';
             console.log('Calling API:', apiUrl);
             
+            console.log('Sending request to:', apiUrl);
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json'
                 },
                 body: JSON.stringify({ message }),
-                credentials: 'same-origin'
+                credentials: 'include'
             });
 
             console.log('API response status:', response.status);
             
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                console.error('API error:', errorData);
-                throw new Error(errorData.error || 'Network response was not ok');
-            }
-
-            const data = await response.json();
+            const data = await response.json().catch(error => {
+                console.error('Failed to parse JSON response:', error);
+                throw new Error('Invalid response from server');
+            });
+            
             console.log('API response data:', data);
+            
+            if (!response.ok || !data.success) {
+                console.error('API error:', data.error || 'Unknown error');
+                throw new Error(data.error || 'Request failed');
+            }
             
             // ローディングを非表示に
             hideLoading();
             
             // アシスタントの返答を表示
-            addMessage('assistant', data.response);
+            if (data.response) {
+                addMessage('assistant', data.response);
+            } else {
+                throw new Error('No response content');
+            }
         } catch (error) {
             console.error('Error:', error);
             hideLoading();

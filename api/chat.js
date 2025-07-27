@@ -1,6 +1,6 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // CORSヘッダーを設定
   const allowedOrigins = [
     'http://localhost:3000',
@@ -49,12 +49,30 @@ module.exports = async (req, res) => {
     const response = await result.response;
     const text = response.text();
 
-    res.status(200).json({ response: text });
+    // レスポンスヘッダーを設定
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+      res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Content-Type', 'application/json');
+    
+    // 成功レスポンス
+    return res.status(200).json({ 
+      success: true,
+      response: text 
+    });
+    
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ 
-      error: '申し訳ありません、エラーが発生しました。しばらくしてからもう一度お試しください。',
-      details: process.env.NODE_ENV === 'development' ? error.message : undefined
+    
+    // エラーレスポンス
+    const statusCode = error.response?.status || 500;
+    const errorMessage = error.message || '申し訳ありません、エラーが発生しました。';
+    
+    return res.status(statusCode).json({
+      success: false,
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
-};
+}
