@@ -4,7 +4,9 @@
   "description": "小島健太郎の模擬面接チャットボット",
   "main": "index.js",
   "scripts": {
-    "start": "vercel dev"
+    "start": "vercel dev",
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
   },
   "keywords": ["chatbot", "interview", "gemini"],
   "author": "",
@@ -13,6 +15,10 @@
     "@google/generative-ai": "^0.8.0"
   },
   "devDependencies": {
-    "@vercel/node": "^3.0.0"
+    "@vercel/node": "^3.0.0",
+    "@vercel/static": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }

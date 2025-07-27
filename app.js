@@ -55,7 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
             
             try {
                 // APIにリクエストを送信
-                const response = await fetch('/api/chat', {
+                const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/chat' : '/api/chat';
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
