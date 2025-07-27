@@ -1,5 +1,8 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+// 環境変数の確認
+console.log('環境変数 GOOGLE_API_KEY:', process.env.GOOGLE_API_KEY ? '設定済み' : '未設定');
+
 module.exports = async (req, res) => {
   // CORSヘッダーを設定
   const allowedOrigins = [
@@ -40,11 +43,11 @@ module.exports = async (req, res) => {
     const apiKey = process.env.GOOGLE_API_KEY;
     
     if (!apiKey) {
-      console.error('Error: GOOGLE_API_KEY is not configured');
+      console.error('エラー: GOOGLE_API_KEY が設定されていません');
       return res.status(500).json({ 
         success: false, 
-        error: 'Server configuration error',
-        details: 'API key is not configured'
+        error: 'サーバー設定エラー',
+        details: 'APIキーが設定されていません'
       });
     }
     
@@ -113,23 +116,11 @@ module.exports = async (req, res) => {
     });
     
   } catch (error) {
-    console.error('API Error:', error);
-    
-    // エラーレスポンス
-    const statusCode = error.response?.status || 500;
-    const errorMessage = error.message || '申し訳ありません、エラーが発生しました。';
-    
-    // エラーの詳細をログに出力
-    console.error('Error details:', {
-      statusCode,
-      message: errorMessage,
-      stack: error.stack
-    });
-    
-    return res.status(statusCode).json({
+    console.error('APIエラー:', error);
+    return res.status(500).json({
       success: false,
-      error: errorMessage,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: '内部サーバーエラー',
+      details: error.message
     });
   }
 }
