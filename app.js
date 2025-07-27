@@ -1,5 +1,5 @@
 // グローバル変数
-let isLoading = false;
+export let isLoading = false;
 
 // DOMの読み込みを待つ
 document.addEventListener('DOMContentLoaded', () => {
