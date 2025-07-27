@@ -10,192 +10,129 @@ document.addEventListener('DOMContentLoaded', () => {
     const messageInput = document.getElementById('messageInput');
     const messagesContainer = document.getElementById('messages');
     const welcomeScreen = document.getElementById('welcomeScreen');
+    const suggestionButtons = document.querySelectorAll('.suggestion-btn');
     
     console.log('DOM elements:', {
         messageForm: !!messageForm,
         messageInput: !!messageInput,
         messagesContainer: !!messagesContainer,
-        welcomeScreen: !!welcomeScreen
+        welcomeScreen: !!welcomeScreen,
+        suggestionButtons: suggestionButtons.length
     });
 
-    // イベントリスナーの設定
-    function setupEventListeners() {
-        console.log('Setting up event listeners...');
-        
-        // メッセージ送信フォーム
-        if (messageForm) {
-            console.log('Adding submit listener to messageForm');
-            messageForm.addEventListener('submit', handleSubmit);
-        }
-        
-        // テキストエリアの高さ調整
-        if (messageInput) {
-            console.log('Adding input listener to messageInput');
-            messageInput.addEventListener('input', adjustTextareaHeight);
-            
-            // Enterキーでの送信
-            messageInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    console.log('Enter key pressed, submitting form');
-                    messageForm.dispatchEvent(new Event('submit'));
-                }
-            });
-        }
-        
-        // サジェッションボタン
-        document.querySelectorAll('.suggestion-btn').forEach((button, index) => {
-            console.log(`Adding click listener to suggestion button ${index + 1}`);
-            button.addEventListener('click', (e) => {
-                const suggestion = e.target.textContent.trim();
-                console.log('Suggestion button clicked:', suggestion);
-                messageInput.value = suggestion;
-                messageInput.focus();
-                adjustTextareaHeight();
-                
-                // 自動送信
-                setTimeout(() => {
-                    messageForm.dispatchEvent(new Event('submit'));
-                }, 100);
-            });
-        });
-    }
-    
-    // フォーム送信ハンドラ
-    async function handleSubmit(e) {
-        e.preventDefault();
-        console.log('Form submitted');
-        
-        const message = messageInput.value.trim();
-        if (!message || isLoading) {
-            console.log('Message is empty or already loading');
-            return;
-        }
+    // メッセージ送信処理
+    async function sendMessage(message) {
+        if (!message || isLoading) return;
         
         console.log('Sending message:', message);
+        isLoading = true;
         
-        // ユーザーメッセージを表示
+        // ウェルカム画面を非表示
+        if (welcomeScreen) {
+            welcomeScreen.classList.add('hidden');
+        }
+        
+        // メッセージを表示
         addMessage('user', message);
-        messageInput.value = '';
-        adjustTextareaHeight();
+        
+        // 入力欄をクリア
+        if (messageInput) {
+            messageInput.value = '';
+            adjustTextareaHeight();
+        }
         
         // ローディング表示
         showLoading();
         
         try {
-            // APIにリクエストを送信
             const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000/api/chat' : '/api/chat';
-            console.log('Calling API:', apiUrl);
-            
-            console.log('Sending request to:', apiUrl);
             const response = await fetch(apiUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Accept': 'application/json'
                 },
-                body: JSON.stringify({ message }),
-                credentials: 'include'
-            });
-
-            console.log('API response status:', response.status);
-            
-            const data = await response.json().catch(error => {
-                console.error('Failed to parse JSON response:', error);
-                throw new Error('Invalid response from server');
+                body: JSON.stringify({ message })
             });
             
-            console.log('API response data:', data);
+            const data = await response.json();
             
-            if (!response.ok || !data.success) {
-                console.error('API error:', data.error || 'Unknown error');
-                throw new Error(data.error || 'Request failed');
-            }
-            
-            // ローディングを非表示に
-            hideLoading();
-            
-            // アシスタントの返答を表示
             if (data.response) {
                 addMessage('assistant', data.response);
             } else {
-                throw new Error('No response content');
+                throw new Error('No response from server');
             }
         } catch (error) {
             console.error('Error:', error);
-            hideLoading();
             addMessage('assistant', '申し訳ありません、エラーが発生しました。もう一度お試しください。');
+        } finally {
+            hideLoading();
+            isLoading = false;
         }
     }
-
-    // イベントリスナーのセットアップを実行
-    setupEventListeners();
-    console.log('Event listeners setup completed');
 
     // メッセージを追加する関数
     function addMessage(role, content) {
-        // ウェルカム画面を非表示
-        if (welcomeScreen) welcomeScreen.classList.add('hidden');
+        if (!messagesContainer) return;
         
-        // メッセージコンテナを表示
-        if (messagesContainer) messagesContainer.classList.remove('hidden');
+        // メッセージコンテナが非表示の場合は表示する
+        messagesContainer.classList.remove('hidden');
         
-        const messageElement = document.createElement('div');
-        messageElement.className = `py-6 px-4 ${role === 'user' ? 'bg-white' : 'bg-gray-50'} border-b border-gray-100`;
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `p-4 ${role === 'user' ? 'bg-blue-50' : 'bg-white'}`;
         
-        messageElement.innerHTML = `
-            <div class="max-w-3xl mx-auto flex gap-4">
-                <div class="w-8 h-8 rounded-full flex-shrink-0 flex items-center justify-center ${role === 'user' ? 'bg-blue-500' : 'bg-green-500'} text-white">
-                    ${role === 'user' ? 'Y' : '小'}
-                </div>
-                <div class="flex-1 min-w-0">
-                    <div class="font-semibold mb-1">
-                        ${role === 'user' ? 'あなた' : '小島健太郎'}
-                    </div>
-                    <div class="whitespace-pre-wrap">${content}</div>
-                </div>
-            </div>
-        `;
+        const messageContent = document.createElement('div');
+        messageContent.className = 'max-w-3xl mx-auto';
         
-        if (messagesContainer) {
-            messagesContainer.appendChild(messageElement);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
+        // メッセージの内容を改行で分割して、段落ごとに表示
+        const paragraphs = content.split('\n');
+        paragraphs.forEach(paragraph => {
+            if (paragraph.trim() !== '') {
+                const p = document.createElement('p');
+                p.className = 'text-gray-800';
+                p.textContent = paragraph;
+                messageContent.appendChild(p);
+            }
+        });
+        
+        messageDiv.appendChild(messageContent);
+        messagesContainer.appendChild(messageDiv);
+        
+        // スクロールを最下部に移動
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-
+    
     // ローディング表示
     function showLoading() {
-        isLoading = true;
-        const loadingElement = document.createElement('div');
-        loadingElement.className = 'py-6 px-4 bg-gray-50';
-        loadingElement.id = 'loading';
-        loadingElement.innerHTML = `
-            <div class="max-w-3xl mx-auto flex gap-4">
-                <div class="w-8 h-8 rounded-full bg-green-500 text-white flex-shrink-0 flex items-center justify-center">
-                    小
-                </div>
-                <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 bg-gray-400 rounded-full bounce-animation" style="animation-delay: 0ms"></div>
-                    <div class="w-2 h-2 bg-gray-400 rounded-full bounce-animation" style="animation-delay: 150ms"></div>
-                    <div class="w-2 h-2 bg-gray-400 rounded-full bounce-animation" style="animation-delay: 300ms"></div>
-                </div>
-            </div>
-        `;
-        if (messagesContainer) {
-            messagesContainer.appendChild(loadingElement);
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        if (!messagesContainer) return;
+        
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loading';
+        loadingDiv.className = 'p-4 bg-white';
+        
+        const loadingContent = document.createElement('div');
+        loadingContent.className = 'max-w-3xl mx-auto flex items-center space-x-2';
+        
+        // ドットのローディングアニメーション
+        for (let i = 0; i < 3; i++) {
+            const dot = document.createElement('div');
+            dot.className = 'w-2 h-2 bg-gray-400 rounded-full animate-bounce';
+            dot.style.animationDelay = `${i * 0.15}s`;
+            loadingContent.appendChild(dot);
         }
+        
+        loadingDiv.appendChild(loadingContent);
+        messagesContainer.appendChild(loadingDiv);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
-
+    
     // ローディング非表示
     function hideLoading() {
-        isLoading = false;
-        const loadingElement = document.getElementById('loading');
-        if (loadingElement) {
-            loadingElement.remove();
+        const loading = document.getElementById('loading');
+        if (loading) {
+            loading.remove();
         }
     }
-
+    
     // テキストエリアの高さを自動調整
     function adjustTextareaHeight() {
         if (messageInput) {
@@ -204,13 +141,52 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 新しいチャットを開始
-    function startNewChat() {
-        if (messagesContainer) {
-            messagesContainer.innerHTML = '';
-            messagesContainer.classList.add('hidden');
+    // イベントリスナーの設定
+    function setupEventListeners() {
+        console.log('Setting up event listeners...');
+        
+        // メッセージ送信フォーム
+        if (messageForm) {
+            console.log('Adding submit listener to messageForm');
+            messageForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const message = messageInput ? messageInput.value.trim() : '';
+                if (message) {
+                    sendMessage(message);
+                }
+            });
         }
-        if (welcomeScreen) welcomeScreen.classList.remove('hidden');
-        closeSidebar();
+        
+        // サジェッションボタン
+        suggestionButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                const message = e.target.textContent.trim();
+                if (message) {
+                    sendMessage(message);
+                }
+            });
+        });
+        
+        // テキストエリアの高さ調整
+        if (messageInput) {
+            console.log('Adding input listener to messageInput');
+            messageInput.addEventListener('input', adjustTextareaHeight);
+            
+            // Enterキーでの送信（Shift+Enterで改行）
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const message = messageInput.value.trim();
+                    if (message) {
+                        messageForm.dispatchEvent(new Event('submit'));
+                    }
+                }
+            });
+        }
     }
+
+    // イベントリスナーのセットアップを実行
+    setupEventListeners();
+    console.log('Event listeners setup completed');
 });
