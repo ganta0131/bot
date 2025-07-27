@@ -28,6 +28,15 @@ module.exports = async (req, res) => {
 
   try {
     const { message } = req.body;
+    
+    // デバッグ用ログ
+    console.log('Environment Variables:', {
+      GOOGLE_API_KEY: process.env.GOOGLE_API_KEY ? '*** (set)' : 'Not set',
+      NODE_ENV: process.env.NODE_ENV,
+      VERCEL: process.env.VERCEL,
+      VERCEL_ENV: process.env.VERCEL_ENV
+    });
+    
     const apiKey = process.env.GOOGLE_API_KEY;
     
     if (!apiKey) {
