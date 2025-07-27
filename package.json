@@ -1,28 +1,18 @@
 {
-  "name": "kojima-chatbot",
-  "version": "0.1.0",
-  "private": true,
+  "name": "kenta-koshima-interview-bot",
+  "version": "1.0.0",
+  "description": "小島健太郎の模擬面接チャットボット",
+  "main": "index.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "start": "vercel dev"
   },
+  "keywords": ["chatbot", "interview", "gemini"],
+  "author": "",
+  "license": "MIT",
   "dependencies": {
-    "@google/generative-ai": "^0.1.1",
-    "next": "14.0.0",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "@google/generative-ai": "^0.8.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "autoprefixer": "^10.0.1",
-    "eslint": "^8.0.0",
-    "eslint-config-next": "14.0.0",
-    "postcss": "^8.0.0",
-    "tailwindcss": "^3.3.0",
-    "typescript": "^5.0.0"
+    "@vercel/node": "^3.0.0"
   }
 }
